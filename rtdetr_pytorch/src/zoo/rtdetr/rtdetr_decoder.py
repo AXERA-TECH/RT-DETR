@@ -11,7 +11,7 @@ import torch.nn.functional as F
 import torch.nn.init as init 
 
 from .denoising import get_contrastive_denoising_training_group
-from .utils import deformable_attention_core_func, get_activation, inverse_sigmoid
+from .utils import deformable_attention_core_func, get_activation, inverse_sigmoid, MultiScaleDeformableAttnFunction_pytorch
 from .utils import bias_init_with_prob
 
 
@@ -57,7 +57,7 @@ class MSDeformableAttention(nn.Module):
         self.value_proj = nn.Linear(embed_dim, embed_dim)
         self.output_proj = nn.Linear(embed_dim, embed_dim)
 
-        self.ms_deformable_attn_core = deformable_attention_core_func
+        self.ms_deformable_attn_core = MultiScaleDeformableAttnFunction_pytorch.apply
 
         self._reset_parameters()
 
@@ -275,7 +275,40 @@ class TransformerDecoder(nn.Module):
             ref_points_detach = inter_ref_bbox.detach(
             ) if self.training else inter_ref_bbox
 
-        return torch.stack(dec_out_bboxes), torch.stack(dec_out_logits)
+
+        output1 = tgt
+        dec_out_bboxes1 = []
+        dec_out_logits1 = []
+        ref_points_detach1 = ref_points_unact
+
+        for i, layer in enumerate(self.layers):
+            ref_points_input1 = F.sigmoid(ref_points_detach1).unsqueeze(2)
+            query_pos_embed1 = query_pos_head(F.sigmoid(ref_points_detach1))
+
+            output1 = layer(output1, ref_points_input1, memory,
+                           memory_spatial_shapes, memory_level_start_index,
+                           attn_mask, memory_mask, query_pos_embed1)
+
+            inter_ref_bbox1 = bbox_head[i](output1) + ref_points_detach1
+
+            if self.training:
+                dec_out_logits1.append(score_head[i](output1))
+                if i == 0:
+                    dec_out_bboxes1.append(F.sigmoid(inter_ref_bbox1))
+                else:
+                    dec_out_bboxes1.append(F.sigmoid(bbox_head[i](output1) + ref_points1))
+
+            elif i == self.eval_idx:
+                dec_out_logits1.append(score_head[i](output1))
+                dec_out_bboxes1.append(F.sigmoid(inter_ref_bbox1))
+                break
+
+            ref_points1 = inter_ref_bbox1
+            ref_points_detach1 = inter_ref_bbox1.detach(
+            ) if self.training else inter_ref_bbox1
+
+
+        return torch.stack(dec_out_bboxes1), torch.stack(dec_out_logits1)
 
 
 @register
@@ -429,9 +462,10 @@ class RTDETRTransformer(nn.Module):
             # [b, c, h, w] -> [b, h*w, c]
             feat_flatten.append(feat.flatten(2).permute(0, 2, 1))
             # [num_levels, 2]
-            spatial_shapes.append([h, w])
+            spatial_shapes.append(torch.tensor([h, w]))
             # [l], start index of each level
             level_start_index.append(h * w + level_start_index[-1])
+        spatial_shapes = torch.stack(spatial_shapes)
 
         # [b, l, c]
         feat_flatten = torch.concat(feat_flatten, 1)
@@ -507,12 +541,11 @@ class RTDETRTransformer(nn.Module):
         else:
             target = output_memory.gather(dim=1, \
                 index=topk_ind.unsqueeze(-1).repeat(1, 1, output_memory.shape[-1]))
-            target = target.detach()
 
         if denoising_class is not None:
             target = torch.concat([denoising_class, target], 1)
 
-        return target, reference_points_unact.detach(), enc_topk_bboxes, enc_topk_logits
+        return target.detach(), reference_points_unact.detach(), enc_topk_bboxes, enc_topk_logits
 
 
     def forward(self, feats, targets=None):
@@ -548,7 +581,7 @@ class RTDETRTransformer(nn.Module):
             self.query_pos_head,
             attn_mask=attn_mask)
 
-        if self.training and dn_meta is not None:
+        if self.training and self.num_denoising > 0:
             dn_out_bboxes, out_bboxes = torch.split(out_bboxes, dn_meta['dn_num_split'], dim=2)
             dn_out_logits, out_logits = torch.split(out_logits, dn_meta['dn_num_split'], dim=2)
 
@@ -558,7 +591,7 @@ class RTDETRTransformer(nn.Module):
             out['aux_outputs'] = self._set_aux_loss(out_logits[:-1], out_bboxes[:-1])
             out['aux_outputs'].extend(self._set_aux_loss([enc_topk_logits], [enc_topk_bboxes]))
             
-            if self.training and dn_meta is not None:
+            if self.training and self.num_denoising > 0:
                 out['dn_aux_outputs'] = self._set_aux_loss(dn_out_logits, dn_out_bboxes)
                 out['dn_meta'] = dn_meta
 

@@ -34,13 +34,11 @@ def main(args, ):
     class Model(nn.Module):
         def __init__(self, ) -> None:
             super().__init__()
-            self.model = cfg.model.deploy()
-            self.postprocessor = cfg.postprocessor.deploy()
-            print(self.postprocessor.deploy_mode)
+            self.model = cfg.model
             
-        def forward(self, images, orig_target_sizes):
+        def forward(self, images):
             outputs = self.model(images)
-            return self.postprocessor(outputs, orig_target_sizes)
+            return outputs
     
 
     model = Model()
@@ -55,11 +53,10 @@ def main(args, ):
 
     torch.onnx.export(
         model, 
-        (data, size), 
+        data, 
         args.file_name,
-        input_names=['images', 'orig_target_sizes'],
-        output_names=['labels', 'boxes', 'scores'],
-        dynamic_axes=dynamic_axes,
+        input_names=['images'],
+        output_names=['pred_logits', 'pred_boxes'],
         opset_version=16, 
         verbose=False
     )
@@ -75,7 +72,7 @@ def main(args, ):
     if args.simplify:
         import onnxsim
         dynamic = True 
-        input_shapes = {'images': data.shape, 'orig_target_sizes': size.shape} if dynamic else None
+        input_shapes = {'images': data.shape} if dynamic else None
         onnx_model_simplify, check = onnxsim.simplify(args.file_name, input_shapes=input_shapes, dynamic_input_shape=dynamic)
         onnx.save(onnx_model_simplify, args.file_name)
         print(f'Simplify onnx model {check}...')
