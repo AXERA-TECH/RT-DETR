@@ -1,0 +1,3 @@
+python tools/export_onnx.py --config configs/rtdetr/rtdetr_r18vd_6x_coco.yml --resume weights/rtdetr_r18vd_5x_coco_objects365_from_paddle.pth --file-name weights/rtdetr_r18vd_5x_coco_objects365_from_paddle.onnx --simplify --check
+python tools/export_onnx.py --config configs/rtdetr/rtdetr_r50vd_6x_coco.yml --resume weights/rtdetr_r50vd_6x_coco_from_paddle.pth --file-name weights/rtdetr_r50vd_6x_coco_from_paddle.onnx --simplify --check
+python tools/export_onnx.py --config configs/rtdetr/rtdetr_r101vd_6x_coco.yml --resume weights/rtdetr_r101vd_6x_coco_from_paddle.pth --file-name weights/rtdetr_r101vd_6x_coco_from_paddle.onnx --simplify --check

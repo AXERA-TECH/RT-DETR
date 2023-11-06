@@ -18,7 +18,7 @@ PResNet:
   return_idx: [1, 2, 3]
   num_stages: 4
   freeze_norm: True
-  pretrained: True 
+  pretrained: False 
 
 HybridEncoder:
   in_channels: [512, 1024, 2048]
