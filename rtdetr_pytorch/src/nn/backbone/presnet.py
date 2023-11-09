@@ -88,7 +88,7 @@ class BottleNeck(nn.Module):
         if not shortcut:
             if variant == 'd' and stride == 2:
                 self.short = nn.Sequential(OrderedDict([
-                    ('pool', nn.AvgPool2d(2, 2, 0, ceil_mode=True)),
+                    ('pool', nn.AvgPool2d(2, 2, 0, ceil_mode=False)),
                     ('conv', ConvNormLayer(ch_in, ch_out * self.expansion, 1, 1))
                 ]))
             else:
