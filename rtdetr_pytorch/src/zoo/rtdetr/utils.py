@@ -57,7 +57,7 @@ def deformable_attention_core_func(value, value_spatial_shapes, sampling_locatio
     return output.permute(0, 2, 1)
 
 
-class MultiScaleDeformableAttnFunction_pytorch(torch.autograd.Function):
+class MultiScaleDeformableAttnFunction_pytorch(torch.nn.Module):
     @staticmethod
     def symbolic(g, value, value_spatial_shapes, sampling_locations, attention_weights):
         output = g.op('com.microsoft::MultiScaleDeformableAttn',value, value_spatial_shapes, sampling_locations, attention_weights)
@@ -70,7 +70,7 @@ class MultiScaleDeformableAttnFunction_pytorch(torch.autograd.Function):
         return output
 
     @staticmethod
-    def forward(ctx, value, value_spatial_shapes, sampling_locations, attention_weights):
+    def forward(self, value, value_spatial_shapes, sampling_locations, attention_weights):
         bs, _, n_head, c = value.shape
         _, Len_q, _, n_levels, n_points, _ = sampling_locations.shape
 

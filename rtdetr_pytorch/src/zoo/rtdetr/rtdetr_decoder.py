@@ -57,7 +57,7 @@ class MSDeformableAttention(nn.Module):
         self.value_proj = nn.Linear(embed_dim, embed_dim)
         self.output_proj = nn.Linear(embed_dim, embed_dim)
 
-        self.ms_deformable_attn_core = MultiScaleDeformableAttnFunction_pytorch.apply
+        self.ms_deformable_attn_core = MultiScaleDeformableAttnFunction_pytorch()
 
         self._reset_parameters()
 
@@ -135,7 +135,7 @@ class MSDeformableAttention(nn.Module):
                 "Last dim of reference_points must be 2 or 4, but get {} instead.".
                 format(reference_points.shape[-1]))
 
-        output = self.ms_deformable_attn_core(value, value_spatial_shapes, sampling_locations, attention_weights)
+        output = self.ms_deformable_attn_core(None,value, value_spatial_shapes, sampling_locations, attention_weights)
 
         output = self.output_proj(output)
 
@@ -497,7 +497,7 @@ class RTDETRTransformer(nn.Module):
         anchors = torch.log(anchors / (1 - anchors))
         # anchors = torch.where(valid_mask, anchors, float('inf'))
         # anchors[valid_mask] = torch.inf # valid_mask [1, 8400, 1]
-        anchors = torch.where(valid_mask, anchors, torch.inf)
+        anchors = torch.where(valid_mask, anchors, 0)
 
         return anchors, valid_mask
 
