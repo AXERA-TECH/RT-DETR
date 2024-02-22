@@ -1,6 +1,17 @@
 import onnxruntime
 import glob
 
+CLASS_NAMES = [
+    "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", "traffic light",
+    "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow",
+    "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee",
+    "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard",
+    "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple",
+    "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch",
+    "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard", "cell phone",
+    "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear",
+    "hair drier", "toothbrush"]
+
 
 class onnx_inferencer:
 
@@ -53,7 +64,7 @@ class onnx_inferencer:
 
 
 if __name__ == "__main__":
-    onnx_model_path = "./weights/tr-detr-gridsample.onnx"
+    onnx_model_path = "./weights/rtdetr_r18vd_5x_coco_objects365_from_paddle.onnx"
     test_model = onnx_inferencer(onnx_model_path)
 
         # import onnxruntime as ort 
@@ -102,6 +113,7 @@ if __name__ == "__main__":
             x1 = (cx+0.5*w)*image.width
             y1 = (cy+0.5*h)*image.height
             draw.rectangle([x0,y0,x1,y1],outline="red")
+            draw.text([x0,y0],CLASS_NAMES[idx]+" %.2f"%score)
     image.save("res.jpg")
     
 
