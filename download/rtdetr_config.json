@@ -1,0 +1,29 @@
+{
+  "model_type": "ONNX",
+  "npu_mode": "NPU3",
+  "quant": {
+    "input_configs": [
+      {
+        "tensor_name": "DEFAULT",
+        "calibration_dataset": "./dataset/coco_1000.tar",
+        "calibration_format": "Image",
+        "calibration_size": 32,
+        "calibration_mean": [0,0,0],
+        "calibration_std": [255,255,255]
+      }
+    ],
+    "calibration_method": "MinMax",
+    "precision_analysis": true,
+    "precision_analysis_method": "EndToEnd"
+  },
+  "input_processors": [
+    {
+      "tensor_name": "DEFAULT",
+      "src_dtype": "U8",
+      "src_layout": "NHWC"
+    }
+  ],
+  "compiler": {
+    "check": 3
+  }
+}
