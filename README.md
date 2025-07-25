@@ -18,6 +18,7 @@ pulsar2 build --config download/rtdetr_config.json --input rtdetr_pytorch/weight
 ## 板上demo
 
 将下面文件复制到板子上，并执行命令，得到输出结果
+
 download/axmodel_inference.py
 download/ssd_horse.jpg
 build_output/rtdetr/rtdetr_msda.axmodel
