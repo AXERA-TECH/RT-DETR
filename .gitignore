@@ -171,3 +171,5 @@ rtdetr_pytorch/dataset/
 rtdetrv2_pytorch/output/
 rtdetrv2_pytorch/dataset/
 build_output/*
+readmev2.md 
+huggingface
